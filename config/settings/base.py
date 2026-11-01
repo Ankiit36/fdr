@@ -13,6 +13,8 @@ import os
 from decimal import Decimal
 from pathlib import Path
 
+import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -25,13 +27,39 @@ def env(key, default=None):
     return os.environ.get(key, default)
 
 
-SECRET_KEY = env("SECRET_KEY", "django-insecure-fdr-portal-dev-secret-key")
-DEBUG = env("DEBUG", "True").lower() in ("true", "1", "yes", "on")
+DEBUG = env("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes", "on")
+
+SECRET_KEY = env("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "django-insecure-fdr-portal-dev-secret-key"
+    else:
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY environment variable is required when DEBUG is False."
+        )
+
 ALLOWED_HOSTS = [
     host.strip()
-    for host in env("ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",")
+    for host in env("DJANGO_ALLOWED_HOSTS", "").split(",")
     if host.strip()
 ]
+
+DATABASE_URL = env("DATABASE_URL")
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600),
+    }
+elif DEBUG:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        },
+    }
+else:
+    raise ImproperlyConfigured(
+        "DATABASE_URL environment variable is required when DEBUG is False."
+    )
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -57,6 +85,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -91,7 +120,8 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STORAGES = {
     "default": {
@@ -144,6 +174,22 @@ AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", "us-east-1")
 
 # Where users are sent after logging out.
 LOGOUT_REDIRECT_URL = "/accounts/login/"
+LOGIN_URL = "/accounts/login/"
+
+# Login rate limiting settings
+LOGIN_RATE_LIMIT_ATTEMPTS = int(env("LOGIN_RATE_LIMIT_ATTEMPTS", 5))
+LOGIN_RATE_LIMIT_WINDOW_SECONDS = int(env("LOGIN_RATE_LIMIT_WINDOW_SECONDS", 300))
+LOGIN_RATE_LIMIT_LOCK_SECONDS = int(env("LOGIN_RATE_LIMIT_LOCK_SECONDS", 900))
+LOGIN_RATE_LIMIT_TRUST_PROXY = env(
+    "LOGIN_RATE_LIMIT_TRUST_PROXY", "False"
+).lower() in ("true", "1", "yes", "on")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "fdr-login",
+    }
+}
 
 # Maximum document upload size in megabytes.
 MAX_DOCUMENT_SIZE_MB = int(env("MAX_DOCUMENT_SIZE_MB", 5))

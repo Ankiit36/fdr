@@ -4,15 +4,13 @@ from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
 
-from apps.accounts.views import LoginView, LogoutView
 from apps.core.views import set_language_view
 
 urlpatterns = [
     path("", RedirectView.as_view(url="/accounts/login/", permanent=False)),
     path("lang/<str:code>/", set_language_view, name="set_language"),
     path("admin/", admin.site.urls),
-    path("accounts/login/", LoginView.as_view(), name="login"),
-    path("accounts/logout/", LogoutView.as_view(), name="logout"),
+    path("accounts/", include("apps.accounts.urls")),
     path("institutions/", include("apps.institutions.urls")),
     path("deposits/", include("apps.deposits.urls")),
     path("documents/", include("apps.documents.urls")),

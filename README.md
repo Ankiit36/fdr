@@ -89,9 +89,12 @@ The application reads configuration values from environment variables defined in
 
 | Variable | Location | Default Value | Description |
 | :--- | :--- | :--- | :--- |
-| `SECRET_KEY` | `base.py` | `"django-insecure-fdr-portal-dev-secret-key"` | Django secret key |
-| `DEBUG` | `base.py` | `"True"` | Enable debug mode |
-| `ALLOWED_HOSTS` | `base.py`, `prod.py` | `"localhost,127.0.0.1,testserver"` (base), `"localhost"` (prod) | Permitted hostnames |
+| `DJANGO_SETTINGS_MODULE` | Core | `config.settings.dev` | Django settings module (`config.settings.dev` or `config.settings.prod`) |
+| `DJANGO_SECRET_KEY` | `base.py` | Dev fallback if DEBUG | Secret key used for cryptographic signing. Required in production. |
+| `DJANGO_DEBUG` | `base.py`, `dev.py` | `"False"` (`base`), `"True"` (`dev`) | Enable or disable debug mode |
+| `DJANGO_ALLOWED_HOSTS` | `base.py`, `dev.py`, `prod.py` | `"127.0.0.1,localhost"` (`dev`) | Comma-separated list of permitted hostnames |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | `prod.py` | `""` | Comma-separated list of trusted CSRF origins (e.g. `https://*.onrender.com`) |
+| `DATABASE_URL` | `base.py` | `""` (SQLite in dev) | Database connection URL (e.g. PostgreSQL on Render) |
 | `EMAIL_BACKEND` | `base.py`, `dev.py`, `prod.py` | `"django.core.mail.backends.console.EmailBackend"` | Django email backend |
 | `EMAIL_HOST` | `base.py`, `prod.py` | `""` (base), `"localhost"` (prod) | SMTP host |
 | `EMAIL_PORT` | `base.py`, `prod.py` | `"587"` (base), `587` (prod) | SMTP port |
@@ -107,15 +110,14 @@ The application reads configuration values from environment variables defined in
 | `MAX_DOCUMENT_SIZE_MB` | `base.py` | `5` | Maximum allowed document upload file size in megabytes |
 | `AGENT_AMOUNT_TOLERANCE` | `base.py` | `"0"` | Allowed numeric tolerance when matching extracted amounts |
 | `AGENT_HIGH_VALUE_AMOUNT` | `base.py` | `"1000000"` | Threshold above which deposits are prioritized as high value |
-| `DB_NAME` | `dev.py`, `prod.py` | `"fdr_portal"` | PostgreSQL database name |
-| `DB_USER` | `dev.py`, `prod.py` | `"fdr_user"` | PostgreSQL database user |
-| `DB_PASSWORD` | `dev.py`, `prod.py` | `"fdr_password"` (dev), `""` (prod) | PostgreSQL database password |
-| `DB_HOST` | `dev.py`, `prod.py` | `"localhost"` | PostgreSQL database host |
-| `DB_PORT` | `dev.py`, `prod.py` | `"5432"` | PostgreSQL database port |
 | `DEMO_PASSWORD` | `seed_demo.py` | `"Demo@12345"` | Initial password applied when creating seed demo users |
+
+## Deployment Limitations
+- **Uploaded Documents Persistence**: Render free web service has no persistent disk. Uploaded documents (PDFs) are stored on the ephemeral filesystem and will be lost on service restart or spin-down. S3 storage (via `django-storages` and AWS S3) is needed for durable production media storage.
+- **Service Inactivity & Spin-down**: On Render's free tier, the web service spins down after 15 minutes of inactivity, resulting in a 50+ second delay (cold start) on the next incoming request.
+- **Safe Seeding on Live Sites**: Demo data is not seeded automatically during build (`build.sh`) to prevent creating default demo passwords on public environments. To create demo users on the live site, run `python manage.py seed_demo` from Render's shell, ensuring `DEMO_PASSWORD` is set to a strong value first.
 
 ## Limitations
 - **Bank Verification**: Bank confirmation is a mock implementation without direct core-banking or API links.
-- **Email Delivery**: Emails are printed to the console in development via `ConsoleEmailBackend`.
+- **Email Delivery**: Emails are printed to the console in development via `ConsoleEmailBackend`. Production SMTP configuration requires valid SMTP server credentials.
 - **Document Text Extraction**: Only digital PDFs with native text layers (via `pypdf`) are supported; there is no optical character recognition (OCR) for scanned images or rasterized PDFs.
-- **Deployment**: Production deployment configurations (e.g. reverse proxy Nginx, ASGI/WSGI servers like Gunicorn/Uvicorn, systemd units, Docker, or container orchestration) are not included.

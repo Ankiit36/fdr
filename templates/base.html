@@ -67,6 +67,7 @@
             <span class="user-pill me-2">
               {{ user.username }} &mdash; <strong>{{ user.role }}</strong>
             </span>
+            <a href="{% url 'password_change' %}" class="btn btn-outline-light btn-sm me-2">Change password</a>
             <form method="post" action="{% url 'logout' %}" class="d-inline mb-0">
               {% csrf_token %}
               <button type="submit" class="btn btn-logout">{% tr "nav.logout" %}</button>
