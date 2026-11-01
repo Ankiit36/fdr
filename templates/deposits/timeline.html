@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "timeline.title" %} - {{ deposit.reference_number }} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>{% tr "timeline.title" %}</h2>
+      <p class="subtitle">{{ deposit.reference_number }} ({{ deposit.bank_name }})</p>
+    </div>
+    <div>
+      <a href="{% url 'deposit_detail' deposit.pk %}" class="btn btn-secondary">{% tr "timeline.back" %}</a>
+    </div>
+  </div>
+
+  <div class="app-card">
+    <div class="app-card-header d-flex justify-content-between align-items-center">
+      <span>{% tr "timeline.event_trail" %}</span>
+      <span class="badge bg-primary">{{ events|length }}</span>
+    </div>
+    <div>
+      {% if events %}
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead>
+              <tr>
+                <th style="width: 20%;">{% tr "timeline.date_time" %}</th>
+                <th style="width: 15%;">{% tr "timeline.source" %}</th>
+                <th>{% tr "timeline.description" %}</th>
+                <th style="width: 15%;">{% tr "timeline.actor" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for event in events %}
+                <tr>
+                  <td class="text-nowrap">{{ event.at|date:"Y-m-d H:i:s" }}</td>
+                  <td>
+                    {% if event.source == "AuditLog" %}
+                      <span class="badge bg-secondary">{% tr "timeline.audit_log" %}</span>
+                    {% elif event.source == "Document" %}
+                      <span class="badge bg-info text-white">Document</span>
+                    {% elif event.source == "Scrutiny" %}
+                      <span class="badge bg-warning text-dark">Scrutiny</span>
+                    {% elif event.source == "Notification" %}
+                      <span class="badge bg-success">Notification</span>
+                    {% else %}
+                      <span class="badge bg-light text-dark">{{ event.source }}</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ event.action }}</td>
+                  <td><span class="fw-semibold">{{ event.actor }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          {% tr "timeline.empty" %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

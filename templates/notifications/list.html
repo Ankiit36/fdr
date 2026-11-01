@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "notif.title" %} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>{% tr "notif.title" %}</h2>
+      <p class="subtitle">{% tr "notif.subtitle" %}</p>
+    </div>
+    {% if unread_count > 0 %}
+      <form method="post" action="{% url 'notifications:notification_mark_all_read' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-primary">{% tr "btn.mark_all_read" %}</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <div class="app-card">
+    {% if notifications %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{% tr "table.created" %}</th>
+              <th>{% tr "table.reference" %}</th>
+              <th>{% tr "table.message" %}</th>
+              <th>{% tr "table.status" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for notification in notifications %}
+              <tr class="{% if notification.is_read %}notification-read{% else %}notification-unread{% endif %}">
+                <td class="small text-muted">{{ notification.created_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                  {% if notification.deposit %}
+                    <a href="{% url 'deposit_detail' notification.deposit.pk %}" class="fw-semibold text-decoration-none">
+                      {{ notification.deposit.reference_number }}
+                    </a>
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td>{{ notification.message }}</td>
+                <td>
+                  {% if notification.is_read %}
+                    <span class="badge bg-secondary">{% tr "notif.read" %}</span>
+                  {% else %}
+                    <span class="badge bg-danger">{% tr "notif.unread" %}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if notifications.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if notifications.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ notifications.previous_page_number }}">{% tr "pagination.prev" %}</a>
+              </li>
+            {% endif %}
+            {% for page_number in notifications.paginator.page_range %}
+              <li class="page-item{% if notifications.number == page_number %} active{% endif %}">
+                <a class="page-link" href="?page={{ page_number }}">{{ page_number }}</a>
+              </li>
+            {% endfor %}
+            {% if notifications.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ notifications.next_page_number }}">{% tr "pagination.next" %}</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        {% tr "notif.empty" %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

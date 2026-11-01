@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "btn.delete" %} {{ deposit.reference_number }} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="app-card border-danger">
+        <div class="page-header border-danger mb-4">
+          <h2 class="text-danger">{% tr "btn.delete" %} {{ deposit.reference_number }}</h2>
+          <p class="subtitle">{% tr "deposit_delete.title" %}</p>
+        </div>
+        <p class="mb-4">{% tr "deposit_delete.msg" %}</p>
+        <form method="post">
+          {% csrf_token %}
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-danger">{% tr "btn.confirm_delete" %}</button>
+            <a href="{% url 'deposit_detail' deposit.pk %}" class="btn btn-secondary">{% tr "btn.cancel" %}</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "dash.title" %} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>{% tr "dash.title" %}</h2>
+      <p class="subtitle">{% tr "dash.subtitle" %}</p>
+    </div>
+    <div>
+      {% if LANG == "hi" %}
+        <a href="{% url 'set_language' 'en' %}" class="btn btn-outline-secondary btn-sm">हिन्दी / English</a>
+      {% else %}
+        <a href="{% url 'set_language' 'hi' %}" class="btn btn-outline-secondary btn-sm">हिन्दी / English</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="stat-card stat-total-value">
+        <span class="stat-label">{{ labels.total_value }}</span>
+        <div class="stat-value">₹{{ data.totals.total_value|floatformat:2 }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card stat-active-count">
+        <span class="stat-label">{{ labels.active }}</span>
+        <div class="stat-value">{{ data.totals.active_count }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card stat-approvals">
+        <span class="stat-label">{% tr "dash.stat.pending" %}</span>
+        <div class="stat-value">{{ data.totals.pending_approvals }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-2 col-sm-4 col-6">
+      <div class="stat-card stat-active">
+        <span class="stat-label">{{ labels.active }}</span>
+        <div class="stat-value">{{ data.counts.active }}</div>
+      </div>
+    </div>
+    <div class="col-md-2 col-sm-4 col-6">
+      <div class="stat-card stat-expiring">
+        <span class="stat-label">{{ labels.expiring }}</span>
+        <div class="stat-value">{{ data.counts.expiring }}</div>
+      </div>
+    </div>
+    <div class="col-md-2 col-sm-4 col-6">
+      <div class="stat-card stat-matured">
+        <span class="stat-label">{{ labels.matured }}</span>
+        <div class="stat-value">{{ data.counts.matured }}</div>
+      </div>
+    </div>
+    <div class="col-md-2 col-sm-4 col-6">
+      <div class="stat-card stat-renewed">
+        <span class="stat-label">{{ labels.renewed }}</span>
+        <div class="stat-value">{{ data.counts.renewed }}</div>
+      </div>
+    </div>
+    <div class="col-md-4 col-sm-8 col-12">
+      <div class="stat-card stat-pending">
+        <span class="stat-label">{{ labels.pending_verification }}</span>
+        <div class="stat-value">{{ data.counts.pending_verification }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="app-card h-100">
+        <div class="app-card-header">
+          {{ labels.upcoming_maturities }}
+          <span class="text-muted fw-normal fs-6">
+            next {{ data.reminder_window }} days
+          </span>
+        </div>
+        {% if data.upcoming_maturities %}
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>{% tr "table.reference" %}</th>
+                  <th>{% tr "table.bank" %}</th>
+                  <th>{% tr "table.amount" %}</th>
+                  <th>{% tr "table.maturity_date" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for deposit in data.upcoming_maturities %}
+                  <tr>
+                    <td>
+                      <a href="{% url 'deposit_detail' deposit.pk %}" class="fw-semibold text-decoration-none">
+                        {{ deposit.reference_number }}
+                      </a>
+                    </td>
+                    <td>{{ deposit.bank_name }}</td>
+                    <td>₹{{ deposit.amount }}</td>
+                    <td>{{ deposit.maturity_date }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            {% tr "dash.empty.upcoming" %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="app-card h-100">
+        <div class="app-card-header">
+          {{ labels.pending_verification }}
+        </div>
+        {% if data.pending_verifications %}
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>{% tr "table.reference" %}</th>
+                  <th>{% tr "table.bank" %}</th>
+                  <th>{% tr "table.status" %}</th>
+                  <th>{% tr "table.created" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for deposit in data.pending_verifications %}
+                  <tr>
+                    <td>
+                      <a href="{% url 'deposit_detail' deposit.pk %}" class="fw-semibold text-decoration-none">
+                        {{ deposit.reference_number }}
+                      </a>
+                    </td>
+                    <td>{{ deposit.bank_name }}</td>
+                    <td>
+                      {% if deposit.status == "SUBMITTED" %}
+                        <span class="status-badge status-submitted">{% tr "status.SUBMITTED" %}</span>
+                      {% elif deposit.status == "UNDER_SCRUTINY" %}
+                        <span class="status-badge status-under_scrutiny">{% tr "status.UNDER_SCRUTINY" %}</span>
+                      {% else %}
+                        <span class="badge bg-secondary">{{ deposit.status }}</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ deposit.created_at|date:"Y-m-d" }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            {% tr "dash.empty.submissions" %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-12">
+      <div class="app-card">
+        <div class="app-card-header">
+          {% tr "nav.notifications" %}
+          <span class="badge bg-primary rounded-pill">
+            {{ data.unread_notifications.count }}
+          </span>
+        </div>
+        {% if data.unread_notifications.latest %}
+          <ul class="list-group list-group-flush">
+            {% for notification in data.unread_notifications.latest %}
+              <li class="list-group-item d-flex justify-content-between align-items-center py-3 notification-unread">
+                <div>
+                  <span class="me-2">🔔</span>
+                  {{ notification.message }}
+                </div>
+                <small class="text-muted">{{ notification.created_at|date:"Y-m-d H:i" }}</small>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty-state">
+            {% tr "notif.empty" %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12">
+      <div class="app-card">
+        <div class="app-card-header">
+          {{ labels.top_findings }}
+        </div>
+        {% if data.top_findings %}
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>{% tr "table.rule_code" %}</th>
+                  <th>{% tr "table.reference" %}</th>
+                  <th>{% tr "table.severity" %}</th>
+                  <th>{% tr "findings.category" %}</th>
+                  <th>{% tr "table.message" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for finding in data.top_findings %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><span class="badge bg-dark">{{ finding.rule_code }}</span></td>
+                    <td>
+                      <a href="{% url 'deposit_detail' finding.deposit.pk %}" class="fw-semibold text-decoration-none">
+                        {{ finding.deposit.reference_number }}
+                      </a>
+                    </td>
+                    <td>
+                      {% if finding.severity == "CRITICAL" %}
+                        <span class="sev-critical">{% tr "sev.CRITICAL" %}</span>
+                      {% elif finding.severity == "WARNING" %}
+                        <span class="sev-warning">{% tr "sev.WARNING" %}</span>
+                      {% else %}
+                        <span class="sev-info">{% tr "sev.INFO" %}</span>
+                      {% endif %}
+                    </td>
+                    <td>{% tr "cat."|add:finding.category %}</td>
+                    <td>{{ finding.display_message }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            {% tr "findings.empty" %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

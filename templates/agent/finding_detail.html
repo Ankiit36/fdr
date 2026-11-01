@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "finding_detail.title" %} #{{ finding.pk }} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>{% tr "finding_detail.title" %} #{{ finding.pk }}</h2>
+      <p class="subtitle">{% tr "finding_detail.subtitle" %}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'agent:agent_finding_list' %}" class="btn btn-secondary">{% tr "finding_detail.back_list" %}</a>
+      <a href="{% url 'deposit_detail' finding.deposit.pk %}" class="btn btn-outline-secondary">{{ finding.deposit.reference_number }}</a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="app-card">
+        <div class="app-card-header">
+          {% tr "finding_detail.title" %}
+        </div>
+        <table class="table">
+          <tbody>
+            <tr>
+              <th style="width: 35%;">{% tr "table.reference" %}</th>
+              <td>
+                <a href="{% url 'deposit_detail' finding.deposit.pk %}" class="fw-semibold text-decoration-none">
+                  {{ finding.deposit.reference_number }}
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <th>{% tr "table.rule_code" %}</th>
+              <td><span class="badge bg-dark">{{ finding.rule_code }}</span></td>
+            </tr>
+            <tr>
+              <th>{% tr "table.severity" %}</th>
+              <td>
+                {% if finding.severity == "CRITICAL" %}
+                  <span class="sev-critical">{% tr "sev.CRITICAL" %}</span>
+                {% elif finding.severity == "WARNING" %}
+                  <span class="sev-warning">{% tr "sev.WARNING" %}</span>
+                {% else %}
+                  <span class="sev-info">{% tr "sev.INFO" %}</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <th>{% tr "findings.category" %}</th>
+              <td>{% tr "cat."|add:finding.category %}</td>
+            </tr>
+            <tr>
+              <th>{% tr "table.status" %}</th>
+              <td><span class="badge bg-light text-dark border">{% tr "status."|add:finding.status %}</span></td>
+            </tr>
+            <tr>
+              <th>{% tr "table.message" %}</th>
+              <td>{{ finding.display_message }}</td>
+            </tr>
+            <tr>
+              <th>{% tr "deposit_detail.created_at" %}</th>
+              <td>{{ finding.created_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+            {% if finding.resolved_at %}
+              <tr>
+                <th>{% tr "finding_detail.resolved_at" %}</th>
+                <td>{{ finding.resolved_at|date:"Y-m-d H:i" }}</td>
+              </tr>
+              <tr>
+                <th>{% tr "finding_detail.resolved_by" %}</th>
+                <td>{{ finding.resolved_by }}</td>
+              </tr>
+              <tr>
+                <th>{% tr "finding_detail.res_note" %}</th>
+                <td>{{ finding.resolution_note }}</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if can_act %}
+        <div class="app-card mt-4">
+          <div class="app-card-header">
+            {% tr "table.actions" %}
+          </div>
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            {% if finding.status == "OPEN" %}
+              <form method="post" action="{% url 'agent:agent_finding_acknowledge' finding.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-primary">{% tr "btn.acknowledge" %}</button>
+              </form>
+              <form method="post" action="{% url 'agent:agent_finding_apply' finding.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-warning">{% tr "btn.apply_suggestion" %}</button>
+              </form>
+              <form method="post" action="{% url 'agent:agent_finding_resolve' finding.pk %}" class="d-flex gap-2 align-items-center">
+                {% csrf_token %}
+                <input type="text" name="note" class="form-control form-control-sm" placeholder="{% tr 'finding_detail.res_note_placeholder' %}" required style="width: 200px;">
+                <button type="submit" class="btn btn-outline-success">{% tr "btn.resolve" %}</button>
+              </form>
+            {% elif finding.status == "ACKNOWLEDGED" %}
+              <form method="post" action="{% url 'agent:agent_finding_resolve' finding.pk %}" class="d-flex gap-2 align-items-center">
+                {% csrf_token %}
+                <input type="text" name="note" class="form-control form-control-sm" placeholder="{% tr 'finding_detail.res_note_placeholder' %}" required style="width: 200px;">
+                <button type="submit" class="btn btn-outline-success">{% tr "btn.resolve" %}</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="col-lg-6">
+      <div class="app-card">
+        <div class="app-card-header">
+          {% tr "finding_detail.extracted_fields" %}
+        </div>
+        {% if extracted_fields %}
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>{% tr "finding_detail.field_name" %}</th>
+                  <th>{% tr "finding_detail.extracted_val" %}</th>
+                  <th>{% tr "finding_detail.source_snippet" %}</th>
+                  <th>{% tr "table.status" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for field in extracted_fields %}
+                  <tr>
+                    <td class="fw-semibold">{{ field.field_name }}</td>
+                    <td>{{ field.extracted_value }}</td>
+                    <td class="small text-muted">{{ field.source_snippet }}</td>
+                    <td><span class="badge bg-secondary">{{ field.extraction_status }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            {% tr "finding_detail.no_extracted" %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

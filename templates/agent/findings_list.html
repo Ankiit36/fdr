@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "findings.title" %} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>{% tr "findings.title" %}</h2>
+      <p class="subtitle">{% tr "findings.subtitle" %}</p>
+    </div>
+    <a href="{% url 'deposit_list' %}" class="btn btn-secondary">{% tr "findings.back_deposits" %}</a>
+  </div>
+
+  <div class="app-card mb-4">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small text-muted">{% tr "table.severity" %}</label>
+        <select name="severity" class="form-select">
+          <option value="">{% tr "status.ALL_SEVERITIES" %}</option>
+          {% for value, label in severity_choices %}
+            <option value="{{ value }}" {% if current_severity == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted">{% tr "findings.category" %}</label>
+        <select name="category" class="form-select">
+          <option value="">{% tr "status.ALL_CATEGORIES" %}</option>
+          {% for value, label in category_choices %}
+            <option value="{{ value }}" {% if current_category == value %}selected{% endif %}>{% tr "cat."|add:value %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted">{% tr "table.status" %}</label>
+        <select name="status" class="form-select">
+          <option value="">{% tr "status.ALL" %}</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{% tr "status."|add:value %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">{% tr "btn.filter" %}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="app-card">
+    {% if findings %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{% tr "table.reference" %}</th>
+              <th>{% tr "table.rule_code" %}</th>
+              <th>{% tr "table.severity" %}</th>
+              <th>{% tr "findings.category" %}</th>
+              <th>{% tr "table.status" %}</th>
+              <th>{% tr "table.message" %}</th>
+              <th>{% tr "table.created" %}</th>
+              <th>{% tr "table.actions" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for finding in findings %}
+              <tr>
+                <td>
+                  <a href="{% url 'deposit_detail' finding.deposit.pk %}" class="fw-semibold text-decoration-none">
+                    {{ finding.deposit.reference_number }}
+                  </a>
+                </td>
+                <td><span class="badge bg-dark">{{ finding.rule_code }}</span></td>
+                <td>
+                  {% if finding.severity == "CRITICAL" %}
+                    <span class="sev-critical">{% tr "sev.CRITICAL" %}</span>
+                  {% elif finding.severity == "WARNING" %}
+                    <span class="sev-warning">{% tr "sev.WARNING" %}</span>
+                  {% else %}
+                    <span class="sev-info">{% tr "sev.INFO" %}</span>
+                  {% endif %}
+                </td>
+                <td>{% tr "cat."|add:finding.category %}</td>
+                <td><span class="badge bg-light text-dark border">{% tr "status."|add:finding.status %}</span></td>
+                <td>{{ finding.display_message }}</td>
+                <td>{{ finding.created_at|date:"Y-m-d" }}</td>
+                <td>
+                  <div class="d-flex flex-wrap gap-1 align-items-center">
+                    <a href="{% url 'agent:agent_finding_detail' finding.pk %}" class="btn btn-sm btn-outline-secondary">{% tr "table.view" %}</a>
+                    {% if can_act and finding.status == "OPEN" %}
+                      <form method="post" action="{% url 'agent:agent_finding_acknowledge' finding.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-primary">{% tr "btn.acknowledge" %}</button>
+                      </form>
+                    {% endif %}
+                    {% if can_act and finding.status in "OPEN,ACKNOWLEDGED" %}
+                      <form method="post" action="{% url 'agent:agent_finding_resolve' finding.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="text" name="note" class="form-control form-control-sm d-inline" placeholder="{% tr 'findings.note_placeholder' %}" style="width: 110px;">
+                        <button type="submit" class="btn btn-sm btn-outline-success">{% tr "btn.resolve" %}</button>
+                      </form>
+                    {% endif %}
+                    {% if can_act and finding.status == "OPEN" %}
+                      <form method="post" action="{% url 'agent:agent_finding_apply' finding.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-warning">{% tr "btn.apply_suggestion" %}</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if findings.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if findings.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ findings.previous_page_number }}&amp;severity={{ current_severity }}&amp;category={{ current_category }}&amp;status={{ current_status }}">{% tr "pagination.prev" %}</a>
+              </li>
+            {% endif %}
+            {% for page_number in findings.paginator.page_range %}
+              <li class="page-item{% if findings.number == page_number %} active{% endif %}">
+                <a class="page-link" href="?page={{ page_number }}&amp;severity={{ current_severity }}&amp;category={{ current_category }}&amp;status={{ current_status }}">{{ page_number }}</a>
+              </li>
+            {% endfor %}
+            {% if findings.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ findings.next_page_number }}&amp;severity={{ current_severity }}&amp;category={{ current_category }}&amp;status={{ current_status }}">{% tr "pagination.next" %}</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        {% tr "findings.empty" %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "release_request.title" %} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>{% tr "release_request.title" %}</h2>
+      <p class="subtitle">{% tr "release_request.subtitle" %}</p>
+    </div>
+    <a href="{% url 'deposit_detail' deposit.pk %}" class="btn btn-secondary">{% tr "timeline.back" %}</a>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="app-card mb-4">
+        <div class="app-card-header">{% tr "release_request.deposit_summary" %}</div>
+        <div class="row g-3">
+          <div class="col-md-4"><strong>{% tr "table.reference" %}:</strong> {{ deposit.reference_number }}</div>
+          <div class="col-md-4"><strong>{% tr "table.bank" %}:</strong> {{ deposit.bank_name }}</div>
+          <div class="col-md-4"><strong>{% tr "table.amount" %}:</strong> ₹{{ deposit.amount }}</div>
+          <div class="col-md-4"><strong>{% tr "table.status" %}:</strong> {{ deposit.status }}</div>
+          <div class="col-md-4"><strong>{% tr "table.issue_date" %}:</strong> {{ deposit.issue_date }}</div>
+          <div class="col-md-4"><strong>{% tr "table.maturity_date" %}:</strong> {{ deposit.maturity_date }}</div>
+        </div>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-header">{% tr "release_request.request_details" %}</div>
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="id_request_type" class="form-label small text-muted">{% tr "release_request.type_label" %}</label>
+            {{ form.request_type }}
+            {% if form.request_type.errors %}
+              <div class="text-danger small mt-1">{{ form.request_type.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="mb-3">
+            <label for="id_note" class="form-label small text-muted">{% tr "release_request.justification" %}</label>
+            {{ form.note }}
+            {% if form.note.errors %}
+              <div class="text-danger small mt-1">{{ form.note.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="d-flex gap-2 mt-4 pt-3 border-top">
+            <button type="submit" class="btn btn-primary">{% tr "btn.submit_release" %}</button>
+            <a href="{% url 'deposit_detail' deposit.pk %}" class="btn btn-outline-secondary">{% tr "btn.cancel" %}</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

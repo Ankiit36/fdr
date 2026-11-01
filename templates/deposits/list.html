@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "deposits.title" %} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>{% tr "deposits.title" %}</h2>
+      <p class="subtitle">{% tr "deposits.subtitle" %}</p>
+    </div>
+    <div>
+      <a href="{% url 'deposit_export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-outline-secondary me-2">{% tr "btn.export_csv" %}</a>
+      {% if user.role == "ADMIN" or user.role == "INSTITUTION" %}
+        <a href="{% url 'deposit_create' %}" class="btn btn-primary">{% tr "btn.new_deposit" %}</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="app-card mb-4">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small text-muted">{% tr "btn.search" %}</label>
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="{% tr 'deposits.search_placeholder' %}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted">{% tr "table.status" %}</label>
+        <select name="status" class="form-select">
+          <option value="">{% tr "status.ALL" %}</option>
+          <option value="SUBMITTED" {% if request.GET.status == "SUBMITTED" %}selected{% endif %}>{% tr "status.SUBMITTED" %}</option>
+          <option value="UNDER_SCRUTINY" {% if request.GET.status == "UNDER_SCRUTINY" %}selected{% endif %}>{% tr "status.UNDER_SCRUTINY" %}</option>
+          <option value="VERIFIED" {% if request.GET.status == "VERIFIED" %}selected{% endif %}>{% tr "status.VERIFIED" %}</option>
+          <option value="DISCREPANCY" {% if request.GET.status == "DISCREPANCY" %}selected{% endif %}>{% tr "status.DISCREPANCY" %}</option>
+          <option value="ACTIVE" {% if request.GET.status == "ACTIVE" %}selected{% endif %}>{% tr "status.ACTIVE" %}</option>
+          <option value="EXPIRING" {% if request.GET.status == "EXPIRING" %}selected{% endif %}>{% tr "status.EXPIRING" %}</option>
+          <option value="MATURED" {% if request.GET.status == "MATURED" %}selected{% endif %}>{% tr "status.MATURED" %}</option>
+          <option value="RENEWED" {% if request.GET.status == "RENEWED" %}selected{% endif %}>{% tr "status.RENEWED" %}</option>
+        </select>
+      </div>
+      {% if institutions %}
+        <div class="col-md-3">
+          <label class="form-label small text-muted">{% tr "table.institution" %}</label>
+          <select name="institution" class="form-select">
+            <option value="">{% tr "table.institution" %}</option>
+            {% for institution in institutions %}
+              <option value="{{ institution.id }}" {% if request.GET.institution == institution.id|stringformat:"s" %}selected{% endif %}>{{ institution.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+      <div class="col-md-2">
+        <label class="form-label small text-muted">{% tr "table.issue_date" %}</label>
+        <input type="date" name="issue_date_from" value="{{ request.GET.issue_date_from }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted">{% tr "table.maturity_date" %}</label>
+        <input type="date" name="issue_date_to" value="{{ request.GET.issue_date_to }}" class="form-control">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">{% tr "btn.filter" %}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="app-card">
+    {% if deposits %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{% tr "table.reference" %}</th>
+              <th>{% tr "table.bank" %}</th>
+              <th>{% tr "table.amount" %}</th>
+              <th>{% tr "table.status" %}</th>
+              <th>{% tr "table.issue_date" %}</th>
+              <th>{% tr "table.maturity_date" %}</th>
+              <th>{% tr "table.actions" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for deposit in deposits %}
+              <tr>
+                <td>
+                  <a href="{% url 'deposit_detail' deposit.pk %}" class="fw-semibold text-decoration-none">
+                    {{ deposit.reference_number }}
+                  </a>
+                </td>
+                <td>{{ deposit.bank_name }}</td>
+                <td>₹{{ deposit.amount }}</td>
+                <td>
+                  {% if deposit.status == "SUBMITTED" %}
+                    <span class="status-badge status-submitted">{% tr "status.SUBMITTED" %}</span>
+                  {% elif deposit.status == "UNDER_SCRUTINY" %}
+                    <span class="status-badge status-under_scrutiny">{% tr "status.UNDER_SCRUTINY" %}</span>
+                  {% elif deposit.status == "VERIFIED" %}
+                    <span class="status-badge status-verified">{% tr "status.VERIFIED" %}</span>
+                  {% elif deposit.status == "DISCREPANCY" %}
+                    <span class="status-badge status-discrepancy">{% tr "status.DISCREPANCY" %}</span>
+                  {% elif deposit.status == "ACTIVE" %}
+                    <span class="status-badge status-active">{% tr "status.ACTIVE" %}</span>
+                  {% elif deposit.status == "EXPIRING" %}
+                    <span class="status-badge status-expiring">{% tr "status.EXPIRING" %}</span>
+                  {% elif deposit.status == "MATURED" %}
+                    <span class="status-badge status-matured">{% tr "status.MATURED" %}</span>
+                  {% elif deposit.status == "RENEWED" %}
+                    <span class="status-badge status-renewed">{% tr "status.RENEWED" %}</span>
+                  {% else %}
+                    <span class="badge bg-secondary">{{ deposit.status }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ deposit.issue_date }}</td>
+                <td>{{ deposit.maturity_date }}</td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <a href="{% url 'deposit_detail' deposit.pk %}" class="btn btn-outline-primary">{% tr "table.view" %}</a>
+                    {% if user.role == "ADMIN" or user.role == "INSTITUTION" and deposit.status == "SUBMITTED" %}
+                      <a href="{% url 'deposit_update' deposit.pk %}" class="btn btn-outline-secondary">{% tr "btn.edit" %}</a>
+                    {% endif %}
+                    {% if user.role == "ADMIN" %}
+                      <a href="{% url 'deposit_delete' deposit.pk %}" class="btn btn-outline-danger">{% tr "btn.delete" %}</a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if deposits.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if deposits.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ deposits.previous_page_number }}">{% tr "pagination.prev" %}</a>
+              </li>
+            {% endif %}
+            {% for page_number in deposits.paginator.page_range %}
+              <li class="page-item{% if deposits.number == page_number %} active{% endif %}">
+                <a class="page-link" href="?page={{ page_number }}">{{ page_number }}</a>
+              </li>
+            {% endfor %}
+            {% if deposits.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ deposits.next_page_number }}">{% tr "pagination.next" %}</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        {% tr "deposits.empty" %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

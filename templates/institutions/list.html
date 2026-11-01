@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "inst.title" %} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>{% tr "inst.title" %}</h2>
+      <p class="subtitle">{% tr "inst.subtitle" %}</p>
+    </div>
+    <a href="{% url 'institution_create' %}" class="btn btn-primary">{% tr "btn.add_institution" %}</a>
+  </div>
+
+  <div class="app-card">
+    {% if institutions %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{% tr "inst.col_name" %}</th>
+              <th>{% tr "inst.col_code" %}</th>
+              <th>{% tr "inst.col_email" %}</th>
+              <th>{% tr "inst.col_phone" %}</th>
+              <th>{% tr "table.status" %}</th>
+              <th>{% tr "table.actions" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for institution in institutions %}
+              <tr>
+                <td class="fw-semibold">{{ institution.name }}</td>
+                <td><span class="badge bg-light text-dark border">{{ institution.code }}</span></td>
+                <td>{{ institution.contact_email }}</td>
+                <td>{{ institution.contact_phone }}</td>
+                <td>
+                  {% if institution.is_active %}
+                    <span class="status-badge status-active">{% tr "status.ACTIVE" %}</span>
+                  {% else %}
+                    <span class="status-badge status-renewed">{% tr "status.INACTIVE" %}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <a href="{% url 'institution_update' institution.pk %}" class="btn btn-outline-primary">{% tr "btn.edit" %}</a>
+                    {% if institution.is_active %}
+                      <form method="post" action="{% url 'institution_deactivate' institution.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-secondary">{% tr "btn.deactivate" %}</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if institutions.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if institutions.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ institutions.previous_page_number }}">{% tr "pagination.prev" %}</a>
+              </li>
+            {% endif %}
+            {% for page_number in institutions.paginator.page_range %}
+              <li class="page-item{% if institutions.number == page_number %} active{% endif %}">
+                <a class="page-link" href="?page={{ page_number }}">{{ page_number }}</a>
+              </li>
+            {% endfor %}
+            {% if institutions.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ institutions.next_page_number }}">{% tr "pagination.next" %}</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        {% tr "inst.empty" %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

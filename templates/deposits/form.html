@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% if object %}{% tr "deposit_form.title_edit" %}{% else %}{% tr "deposit_form.title_new" %}{% endif %} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="app-card">
+        <div class="page-header mb-4">
+          <h2>{% if object %}{% tr "deposit_form.title_edit" %}{% else %}{% tr "deposit_form.title_new" %}{% endif %}</h2>
+          <p class="subtitle">{% tr "deposit_form.subtitle" %}</p>
+        </div>
+        <form method="post">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <div class="mt-4 pt-3 border-top d-flex gap-2">
+            <button type="submit" class="btn btn-primary">{% tr "btn.save" %}</button>
+            <a href="{% url 'deposit_list' %}" class="btn btn-secondary">{% tr "btn.cancel" %}</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

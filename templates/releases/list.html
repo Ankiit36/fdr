@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "releases.title" %} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>{% tr "releases.title" %}</h2>
+      <p class="subtitle">{% tr "releases.subtitle" %}</p>
+    </div>
+    <div>
+      <a href="{% url 'releases:release_export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-outline-secondary">{% tr "btn.export_csv" %}</a>
+    </div>
+  </div>
+
+  <div class="app-card mb-4">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small text-muted">{% tr "table.status" %}</label>
+        <select name="status" class="form-select">
+          <option value="">{% tr "status.ALL" %}</option>
+          {% for code, label in status_choices %}
+            <option value="{{ code }}" {% if selected_status == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">{% tr "btn.filter" %}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="app-card">
+    {% if releases %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{% tr "table.id" %}</th>
+              <th>{% tr "table.reference" %}</th>
+              <th>{% tr "table.type" %}</th>
+              <th>{% tr "table.amount" %}</th>
+              <th>{% tr "table.status" %}</th>
+              <th>{% tr "table.requested_by" %}</th>
+              <th>{% tr "deposit_detail.created_at" %}</th>
+              <th>{% tr "table.actions" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for release in releases %}
+              <tr>
+                <td>#{{ release.id }}</td>
+                <td>
+                  <a href="{% url 'deposit_detail' release.deposit.pk %}" class="fw-semibold text-decoration-none">
+                    {{ release.deposit.reference_number }}
+                  </a>
+                </td>
+                <td><span class="badge bg-secondary">{{ release.get_request_type_display }}</span></td>
+                <td>₹{{ release.amount }}</td>
+                <td>
+                  {% if release.status == "REQUESTED" %}
+                    <span class="rel-requested">{% tr "rel.REQUESTED" %}</span>
+                  {% elif release.status == "UNDER_REVIEW" %}
+                    <span class="rel-review">{% tr "rel.UNDER_REVIEW" %}</span>
+                  {% elif release.status == "APPROVED" %}
+                    <span class="rel-approved">{% tr "rel.APPROVED" %}</span>
+                  {% elif release.status == "PAID_OUT" %}
+                    <span class="rel-paid">{% tr "rel.PAID_OUT" %}</span>
+                  {% elif release.status == "REJECTED" %}
+                    <span class="rel-rejected">{% tr "rel.REJECTED" %}</span>
+                  {% else %}
+                    <span class="badge bg-secondary">{{ release.status }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ release.requested_by.username|default:"-" }}</td>
+                <td>{{ release.requested_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                  <a href="{% url 'releases:release_detail' release.pk %}" class="btn btn-sm btn-outline-primary">{% tr "table.view" %}</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if is_paginated %}
+        <nav aria-label="{% tr 'releases.pagination_label' %}" class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_status %}&status={{ selected_status }}{% endif %}">{% tr "pagination.prev" %}</a>
+              </li>
+            {% endif %}
+            <li class="page-item disabled">
+              <span class="page-link">{% tr "pagination.page" %} {{ page_obj.number }} {% tr "pagination.of" %} {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_status %}&status={{ selected_status }}{% endif %}">{% tr "pagination.next" %}</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        {% tr "releases.empty" %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

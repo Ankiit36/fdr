@@ -1,0 +1,102 @@
+{% load static i18n_hi %}
+<!DOCTYPE html>
+<html lang="{{ LANG|default:'en' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% tr "nav.brand" %}{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+    <div class="container-fluid page-container">
+      <a class="navbar-brand" href="{% url 'dashboard:dashboard' %}">
+        <span class="fs-4">🏛️</span> <strong>{% tr "nav.brand" %}</strong>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#portalNavbar" aria-controls="portalNavbar" aria-expanded="false" aria-label="{% tr 'nav.toggle' %}">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="portalNavbar">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          {% if user.is_authenticated %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'dashboard:dashboard' %}">{% tr "nav.dashboard" %}</a>
+            </li>
+            {% if user.role == "ADMIN" %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'institution_list' %}">{% tr "nav.institutions" %}</a>
+              </li>
+            {% endif %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'deposit_list' %}">{% tr "nav.deposits" %}</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'releases:release_list' %}">{% tr "nav.releases" %}</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'agent:agent_finding_list' %}">{% tr "nav.agent_findings" %}</a>
+            </li>
+            {% if user.role == "ADMIN" or user.role == "OFFICER" %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'dashboard:analytics' %}">{% tr "nav.analytics" %}</a>
+              </li>
+            {% endif %}
+            {% if user.role == "ADMIN" %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'audit:audit_log_list' %}">{% tr "nav.audit" %}</a>
+              </li>
+            {% endif %}
+          {% endif %}
+        </ul>
+        <div class="d-flex align-items-center gap-2">
+          {% if LANG == "hi" %}
+            <a href="{% url 'set_language' 'en' %}" class="btn btn-outline-light btn-sm">English</a>
+          {% else %}
+            <a href="{% url 'set_language' 'hi' %}" class="btn btn-outline-light btn-sm">हिन्दी</a>
+          {% endif %}
+          {% if user.is_authenticated %}
+            <a href="{% url 'notifications:notification_list' %}" class="btn btn-notification position-relative me-2" title="{% tr 'nav.notifications' %}">
+              🔔
+              {% if unread_notifications_count > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                  {{ unread_notifications_count }}
+                </span>
+              {% endif %}
+            </a>
+            <span class="user-pill me-2">
+              {{ user.username }} &mdash; <strong>{{ user.role }}</strong>
+            </span>
+            <form method="post" action="{% url 'logout' %}" class="d-inline mb-0">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-logout">{% tr "nav.logout" %}</button>
+            </form>
+          {% else %}
+            <a class="nav-link text-white fw-bold" href="{% url 'login' %}">{% tr "nav.login" %}</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-container py-4 flex-grow-1">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="app-footer">
+    <div class="page-container">
+      <small>{% tr "footer.text" %}</small>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

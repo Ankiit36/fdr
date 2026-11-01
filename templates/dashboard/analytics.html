@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "analytics.title" %} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>{% tr "analytics.title" %}</h2>
+      <p class="subtitle">{% tr "analytics.subtitle" %}</p>
+    </div>
+    <div>
+      <a href="{% url 'dashboard:summary_pdf' %}" class="btn btn-outline-primary">{% tr "analytics.download_pdf" %}</a>
+    </div>
+  </div>
+
+  <div class="app-card">
+    <div class="app-card-header d-flex justify-content-between align-items-center">
+      <span>{% tr "analytics.metrics_summary" %}</span>
+      <span class="badge bg-secondary">{{ analytics|length }}</span>
+    </div>
+    <div>
+      {% if analytics %}
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead>
+              <tr>
+                <th>{% tr "analytics.col.institution" %}</th>
+                <th>{% tr "analytics.col.code" %}</th>
+                <th class="text-end">{% tr "analytics.col.total_deposits" %}</th>
+                <th class="text-end">{% tr "analytics.col.expiring" %}</th>
+                <th class="text-end">{% tr "analytics.col.matured" %}</th>
+                <th class="text-end">{% tr "status.DISCREPANCY" %}</th>
+                <th class="text-end">{% tr "analytics.col.critical_findings" %}</th>
+                <th class="text-end">{% tr "analytics.col.total_active_value" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in analytics %}
+                <tr>
+                  <td><strong>{{ row.name }}</strong></td>
+                  <td><span class="badge bg-light text-dark">{{ row.code }}</span></td>
+                  <td class="text-end">{{ row.total_deposits }}</td>
+                  <td class="text-end">
+                    {% if row.expiring_count > 0 %}
+                      <span class="badge bg-warning text-dark">{{ row.expiring_count }}</span>
+                    {% else %}
+                      {{ row.expiring_count }}
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    {% if row.matured_count > 0 %}
+                      <span class="badge bg-danger">{{ row.matured_count }}</span>
+                    {% else %}
+                      {{ row.matured_count }}
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    {% if row.discrepancy_count > 0 %}
+                      <span class="badge bg-danger">{{ row.discrepancy_count }}</span>
+                    {% else %}
+                      {{ row.discrepancy_count }}
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    {% if row.critical_findings_count > 0 %}
+                      <span class="badge bg-danger">{{ row.critical_findings_count }}</span>
+                    {% else %}
+                      {{ row.critical_findings_count }}
+                    {% endif %}
+                  </td>
+                  <td class="text-end fw-semibold">₹{{ row.total_value|floatformat:2 }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          {% tr "analytics.empty" %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

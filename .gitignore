@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+db.sqlite3
+db.backup-before-rename.sqlite3
+.env
+media/
+staticfiles/
+*.log
+.idea/
+.vscode/

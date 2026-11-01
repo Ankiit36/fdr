@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "release_detail.title" %} #{{ release.id }} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>{% tr "release_detail.title" %} #{{ release.id }}</h2>
+      <p class="subtitle">{% tr "release_detail.subtitle" %}</p>
+    </div>
+    <div>
+      <a href="{% url 'releases:release_list' %}" class="btn btn-secondary me-2">{% tr "release_detail.back_releases" %}</a>
+      <a href="{% url 'deposit_detail' release.deposit.pk %}" class="btn btn-outline-secondary">{% tr "release_detail.view_deposit" %}</a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="app-card mb-4">
+        <div class="app-card-header">
+          {% tr "release_detail.summary_card" %}
+        </div>
+        <table class="table mb-0">
+          <tbody>
+            <tr>
+              <th style="width: 35%;">{% tr "table.reference" %}</th>
+              <td>
+                <a href="{% url 'deposit_detail' release.deposit.pk %}" class="fw-semibold text-decoration-none">
+                  {{ release.deposit.reference_number }}
+                </a>
+                - {{ release.deposit.bank_name }}
+              </td>
+            </tr>
+            <tr>
+              <th>{% tr "table.institution" %}</th>
+              <td>{{ release.deposit.institution.name }} - {{ release.deposit.institution.code }}</td>
+            </tr>
+            <tr>
+              <th>{% tr "release_request.type_label" %}</th>
+              <td><span class="badge bg-secondary">{{ release.get_request_type_display }}</span></td>
+            </tr>
+            <tr>
+              <th>{% tr "table.status" %}</th>
+              <td>
+                {% if release.status == "REQUESTED" %}
+                  <span class="rel-requested">{% tr "rel.REQUESTED" %}</span>
+                {% elif release.status == "UNDER_REVIEW" %}
+                  <span class="rel-review">{% tr "rel.UNDER_REVIEW" %}</span>
+                {% elif release.status == "APPROVED" %}
+                  <span class="rel-approved">{% tr "rel.APPROVED" %}</span>
+                {% elif release.status == "PAID_OUT" %}
+                  <span class="rel-paid">{% tr "rel.PAID_OUT" %}</span>
+                {% elif release.status == "REJECTED" %}
+                  <span class="rel-rejected">{% tr "rel.REJECTED" %}</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ release.status }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <th>{% tr "table.amount" %}</th>
+              <td><strong class="text-primary fs-5">₹{{ release.amount }}</strong></td>
+            </tr>
+            <tr>
+              <th>{% tr "table.requested_by" %}</th>
+              <td>{{ release.requested_by.username|default:"-" }}</td>
+            </tr>
+            <tr>
+              <th>{% tr "deposit_detail.created_at" %}</th>
+              <td>{{ release.requested_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+            <tr>
+              <th>{% tr "release_detail.reviewed_by" %}</th>
+              <td>{{ release.reviewed_by.username|default:"-" }}</td>
+            </tr>
+            <tr>
+              <th>{% tr "release_detail.paid_out_at" %}</th>
+              <td>{{ release.reviewed_at|date:"Y-m-d H:i"|default:"-" }}</td>
+            </tr>
+            <tr>
+              <th>{% tr "release_detail.decision_notes" %}</th>
+              <td>{{ release.decision_note|default:"-"|linebreaksbr }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {% if release.eligibility_result.checks %}
+        <div class="app-card mb-4">
+          <div class="app-card-header d-flex justify-content-between align-items-center">
+            <span>{% tr "rel.eligibility_checks" %}</span>
+            {% if release.eligibility_result.eligible %}
+              <span class="badge bg-success">{% tr "rel.eligible" %}</span>
+            {% else %}
+              <span class="badge bg-danger">{% tr "rel.not_eligible" %}</span>
+            {% endif %}
+          </div>
+          <div class="table-responsive">
+            <table class="table mb-0">
+              <thead>
+                <tr>
+                  <th style="width: 15%;">{% tr "table.rule_code" %}</th>
+                  <th style="width: 20%;">{% tr "rel.result" %}</th>
+                  <th>{% tr "release_detail.reason" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for check in release.eligibility_result.checks %}
+                  <tr>
+                    <td><strong>{{ check.code }}</strong></td>
+                    <td>
+                      {% if check.passed %}
+                        <span class="badge bg-success">{% tr "rel.passed" %}</span>
+                      {% else %}
+                        <span class="badge bg-danger">{% tr "rel.failed" %}</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ check.reason }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if can_review or can_decide or can_reject_requested or can_pay_out %}
+        <div class="app-card mb-4">
+          <div class="app-card-header">
+            {% tr "release_detail.workflow_card" %}
+          </div>
+          <div>
+            {% if can_review %}
+              <div class="mb-3">
+                <form method="post" action="{% url 'releases:release_review' release.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-info text-white">{% tr "btn.start_review" %}</button>
+                </form>
+              </div>
+            {% endif %}
+
+            {% if can_decide %}
+              <div class="mb-4">
+                <form method="post" action="{% url 'releases:release_approve' release.pk %}">
+                  {% csrf_token %}
+                  <div class="mb-2">
+                    <label for="approve_note" class="form-label small text-muted">{% tr "release_detail.decision_notes" %}</label>
+                    <textarea name="note" id="approve_note" class="form-control" rows="3" required placeholder="{% tr 'release_detail.approve_placeholder' %}"></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-success">{% tr "btn.approve" %}</button>
+                </form>
+              </div>
+            {% endif %}
+
+            {% if can_decide or can_reject_requested %}
+              <div class="mb-3">
+                <form method="post" action="{% url 'releases:release_reject' release.pk %}">
+                  {% csrf_token %}
+                  <div class="mb-2">
+                    <label for="reject_note" class="form-label small text-muted">{% tr "release_detail.decision_notes" %}</label>
+                    <textarea name="note" id="reject_note" class="form-control" rows="3" required placeholder="{% tr 'release_detail.reject_placeholder' %}"></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-danger">{% tr "btn.reject" %}</button>
+                </form>
+              </div>
+            {% endif %}
+
+            {% if can_pay_out %}
+              <div class="mb-3">
+                <form method="post" action="{% url 'releases:release_paid_out' release.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-success">{% tr "btn.mark_paid_out" %}</button>
+                </form>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="col-lg-5">
+      <div class="app-card">
+        <div class="app-card-header">
+          {% tr "release_detail.audit_card" %}
+        </div>
+        <div>
+          {% if audit_history %}
+            <ul class="list-group list-group-flush">
+              {% for log in audit_history %}
+                <li class="list-group-item px-0 py-3">
+                  <div class="d-flex justify-content-between">
+                    <strong>{{ log.action }}</strong>
+                    <small class="text-muted">{{ log.timestamp|date:"Y-m-d H:i" }}</small>
+                  </div>
+                  <div class="small text-muted mb-1">{{ log.actor.username|default:"System" }}</div>
+                  {% if log.changes %}
+                    <pre class="bg-light p-2 rounded small mb-0">{{ log.changes }}</pre>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="empty-state">
+              {% tr "audit.empty" %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

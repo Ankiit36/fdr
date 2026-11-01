@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load i18n_hi %}
+{% block title %}{% tr "audit.title" %} - {% tr "nav.brand" %}{% endblock %}
+{% block content %}
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2>{% tr "audit.title" %}</h2>
+      <p class="subtitle">{% tr "audit.subtitle" %}</p>
+    </div>
+    <div>
+      <a href="{% url 'audit:audit_chain_verify' %}" class="btn btn-outline-primary">{% tr "btn.verify_chain" %}</a>
+    </div>
+  </div>
+
+  <div class="app-card mb-4">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small text-muted">{% tr "table.user" %}</label>
+        <input type="text" name="user" class="form-control" placeholder="{% tr 'audit.user_placeholder' %}" value="{{ filter_user }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted">{% tr "table.model" %}</label>
+        <input type="text" name="model_name" class="form-control" placeholder="{% tr 'audit.model_placeholder' %}" value="{{ filter_model_name }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted">{% tr "audit.date_from" %}</label>
+        <input type="date" name="date_from" class="form-control" value="{{ filter_date_from }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted">{% tr "audit.date_to" %}</label>
+        <input type="date" name="date_to" class="form-control" value="{{ filter_date_to }}">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">{% tr "btn.filter" %}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="app-card">
+    {% if audit_logs %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{% tr "deposit_detail.created_at" %}</th>
+              <th>{% tr "timeline.actor" %}</th>
+              <th>{% tr "table.action" %}</th>
+              <th>{% tr "table.model" %}</th>
+              <th>{% tr "table.id" %}</th>
+              <th>{% tr "table.details" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in audit_logs %}
+              <tr>
+                <td class="small text-muted">{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                <td><span class="fw-semibold">{{ log.actor.username|default:"System" }}</span></td>
+                <td><span class="badge bg-secondary">{{ log.action }}</span></td>
+                <td>{{ log.model_name }}</td>
+                <td>{{ log.object_id|default:"-" }}</td>
+                <td><code class="small text-dark">{{ log.changes }}</code></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if audit_logs.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if audit_logs.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ audit_logs.previous_page_number }}&amp;user={{ filter_user }}&amp;model_name={{ filter_model_name }}&amp;date_from={{ filter_date_from }}&amp;date_to={{ filter_date_to }}">{% tr "pagination.prev" %}</a>
+              </li>
+            {% endif %}
+            {% for page_number in audit_logs.paginator.page_range %}
+              <li class="page-item{% if audit_logs.number == page_number %} active{% endif %}">
+                <a class="page-link" href="?page={{ page_number }}&amp;user={{ filter_user }}&amp;model_name={{ filter_model_name }}&amp;date_from={{ filter_date_from }}&amp;date_to={{ filter_date_to }}">{{ page_number }}</a>
+              </li>
+            {% endfor %}
+            {% if audit_logs.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ audit_logs.next_page_number }}&amp;user={{ filter_user }}&amp;model_name={{ filter_model_name }}&amp;date_from={{ filter_date_from }}&amp;date_to={{ filter_date_to }}">{% tr "pagination.next" %}</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        {% tr "audit.empty" %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
